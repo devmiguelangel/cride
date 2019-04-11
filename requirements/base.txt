@@ -7,6 +7,9 @@ psycopg2==2.8.1 --no-binary psycopg2
 # Django
 django==2.2
 
+# Django REST Framework
+djangorestframework==3.9.2
+
 # Environment
 django-environ==0.4.5
 
