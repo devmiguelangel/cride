@@ -44,6 +44,7 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    'rest_framework',
 ]
 
 LOCAL_APPS = [
@@ -52,6 +53,14 @@ LOCAL_APPS = [
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
+# Django REST Framework renderer settings
+REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    )
+}
 
 # Passwords
 PASSWORD_HASHERS = [
