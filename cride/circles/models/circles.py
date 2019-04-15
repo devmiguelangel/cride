@@ -4,6 +4,9 @@
 from django.db import models
 
 # Models
+from cride.users.models import User
+
+# Utilities
 from cride.utils.models import CRideModel
 
 
@@ -20,6 +23,12 @@ class Circle(CRideModel):
 
     about = models.CharField('circle description', max_length=255)
     picture = models.ImageField(upload_to='circles/pictures', blank=True, null=True)
+
+    members = models.ManyToManyField(
+        User,
+        through='circles.Membership',
+        through_fields=('circle', 'user')
+    )
 
     # Stats
     rides_offered = models.PositiveIntegerField(default=0)
