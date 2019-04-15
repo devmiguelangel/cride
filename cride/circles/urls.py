@@ -10,7 +10,7 @@ from rest_framework import routers
 from cride.circles.views import CircleViewSet
 
 router = routers.DefaultRouter()
-router.register(r'circles', CircleViewSet, base_name='user')
+router.register(r'circles', CircleViewSet, base_name='circles')
 
 urlpatterns = [
     path('', include(router.urls)),

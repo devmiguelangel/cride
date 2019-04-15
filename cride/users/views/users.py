@@ -1,20 +1,24 @@
 """ User views """
 
 # Django REST Framework
-from rest_framework import status
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 # Serializers
 from cride.users.serializers import (UserLoginSerializer, UserSignUpSerializer, AccountVerificationSerializer,
                                      UserModelSerializer)
 
 
-class UserLoginAPIView(APIView):
-    """ User login API view. """
+class UserViewSet(viewsets.ModelViewSet):
+    """ User view set.
 
-    def post(self, request, *args, **kwargs):
-        """ Handle HTTP POST request. """
+    Handle sign up, login and account verification.
+    """
+
+    @action(detail=False, methods=['post'])
+    def login(self, request):
+        """ User login API view. """
 
         serializer = UserLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -26,12 +30,9 @@ class UserLoginAPIView(APIView):
 
         return Response(data, status=status.HTTP_201_CREATED)
 
-
-class UserSignUpAPIView(APIView):
-    """ User sign up API view. """
-
-    def post(self, request, *args, **kwargs):
-        """ Handle HTTP POST request. """
+    @action(detail=False, methods=['post'])
+    def signup(self, request):
+        """ User sign up API view. """
 
         serializer = UserSignUpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -40,12 +41,9 @@ class UserSignUpAPIView(APIView):
 
         return Response(data, status=status.HTTP_201_CREATED)
 
-
-class AccountVerificationAPIView(APIView):
-    """ Account Verification API view. """
-
-    def post(self, request, *args, **kwargs):
-        """ Handle HTTP POST request. """
+    @action(detail=False, methods=['post'])
+    def verify(self, request):
+        """ Account Verification API view. """
 
         serializer = AccountVerificationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
