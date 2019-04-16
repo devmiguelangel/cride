@@ -1,13 +1,13 @@
 """ Circle Membership views. """
 
 # Django REST Framework
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
 # Serializers
-from cride.circles.serializers import MembershipModelSerializer
+from cride.circles.serializers import MembershipModelSerializer, AddMemberSerializer
 
 # Permissions
 from rest_framework.permissions import IsAuthenticated
@@ -17,8 +17,8 @@ from cride.circles.permissions import IsActiveCircleMember, IsSelfMember
 from cride.circles.models import Circle, Membership, Invitation
 
 
-class MembershipViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
-                        viewsets.GenericViewSet):
+class MembershipViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.RetrieveModelMixin,
+                        mixins.DestroyModelMixin, viewsets.GenericViewSet):
     """ Circle membership view set. """
 
     serializer_class = MembershipModelSerializer
@@ -32,10 +32,12 @@ class MembershipViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins
         return super(MembershipViewSet, self).dispatch(request, *args, **kwargs)
 
     def get_permissions(self):
-        permission_classes = [IsAuthenticated, IsActiveCircleMember]
+        permission_classes = [IsAuthenticated]
 
         if self.action == 'invitations':
             permission_classes.append(IsSelfMember)
+        elif self.action != 'create':
+            permission_classes.append(IsActiveCircleMember)
 
         return [permission() for permission in permission_classes]
 
@@ -102,3 +104,16 @@ class MembershipViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins
         }
 
         return Response(data)
+
+    def create(self, request, *args, **kwargs):
+        """ Handle member creation from invitation code. """
+
+        serializer = AddMemberSerializer(
+            data=request.data,
+            context={'circle': self.circle, 'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        member = serializer.save()
+
+        data = self.get_serializer(member).data
+        return Response(data, status=status.HTTP_201_CREATED)
