@@ -13,6 +13,9 @@ djangorestframework==3.9.2
 # JWT
 pyjwt==1.7.1
 
+# Django Filter
+django-filter==2.1.0
+
 # Environment
 django-environ==0.4.5
 
