@@ -12,14 +12,14 @@ from cride.users.permissions import IsAccountOwner
 # Serializers
 from cride.circles.serializers import CircleModelSerializer
 from cride.users.serializers import (UserLoginSerializer, UserSignUpSerializer, AccountVerificationSerializer,
-                                     UserModelSerializer)
+                                     UserModelSerializer, ProfileModelSerializer)
 
 # Models
 from cride.circles.models import Circle
 from cride.users.models import User
 
 
-class UserViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
     """ User view set.
 
     Handle sign up, login and account verification.
@@ -34,7 +34,7 @@ class UserViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 
         if self.action in ['signup', 'login', 'verify']:
             permission_classes = [AllowAny]
-        elif self.action == 'retrieve':
+        elif self.action in ['retrieve', 'update', 'partial_update']:
             permission_classes = [IsAuthenticated, IsAccountOwner]
         else:
             permission_classes = [IsAuthenticated]
@@ -58,6 +58,25 @@ class UserViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         response.data = data
 
         return response
+
+    @action(detail=True, methods=['put', 'patch'])
+    def profile(self, request, *args, **kwargs):
+        """ Update profile data. """
+
+        user = self.get_object()
+        profile = user.profile
+        partial = request.method == 'PATCH'
+        serializer = ProfileModelSerializer(
+            profile,
+            data=request.data,
+            partial=partial
+        )
+
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        data = UserModelSerializer(user).data
+
+        return Response(data)
 
     @action(detail=False, methods=['post'])
     def login(self, request):
