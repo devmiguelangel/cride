@@ -6,6 +6,7 @@ from rest_framework import serializers
 # Models
 from cride.circles.models import Membership
 from cride.rides.models import Ride
+from cride.users.models import User
 
 # Serializers
 from cride.users.serializers import UserModelSerializer
@@ -114,3 +115,76 @@ class RideModelSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Ongoing rides cannot be modified.')
 
         return super(RideModelSerializer, self).update(instance, validated_data)
+
+
+class JoinRideSerializer(serializers.ModelSerializer):
+    """ Join ride serializer. """
+
+    passenger = serializers.IntegerField()
+
+    class Meta:
+        """ Meta class. """
+
+        model = Ride
+        fields = ('passenger', )
+
+    def validate_passenger(self, data):
+        """ Verify passenger exists and is a circle member. """
+
+        try:
+            user = User.objects.get(pk=data)
+        except User.DoesNotExists:
+            raise serializers.ValidationError('Invalid passenger.')
+
+        circle = self.context['circle']
+
+        try:
+            member = Membership.objects.get(user=user, circle=circle, is_active=True)
+        except Membership.DoesNotExists:
+            raise serializers.ValidationError('User is not an active member of the circle.')
+
+        self.context['user'] = user
+        self.context['member'] = member
+
+        return data
+
+    def validate(self, attrs):
+        """ Verify rides allow new passengers. """
+
+        ride = self.context['ride']
+
+        if ride.departure_date <= timezone.now():
+            raise serializers.ValidationError('You can`t join this ride now.')
+
+        if ride.available_seats < 1:
+            raise serializers.ValidationError('Ride is already full!.')
+
+        if Ride.objects.filter(passengers__pk=attrs['passenger']):
+            raise serializers.ValidationError('Passenger is already in this trip.')
+
+        return attrs
+
+    def update(self, instance, validated_data):
+        """ Add passenger to ride and update stats. """
+
+        ride = self.context['ride']
+        circle = self.context['circle']
+        user = self.context['user']
+
+        ride.passengers.add(user)
+
+        # Profile
+        profile = user.profile
+        profile.rides_taken += 1
+        profile.save()
+
+        # Membership
+        member = self.context['member']
+        member.rides_taken += 1
+        member.save()
+
+        # Circle
+        circle.rides_taken += 1
+        circle.save()
+
+        return validated_data
